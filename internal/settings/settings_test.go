@@ -23,11 +23,30 @@ func stubExecutable(t *testing.T, path string, err error) {
 	t.Cleanup(func() { executablePath = original })
 }
 
-// useTempExeDir 把可执行文件"放"到临时目录里，返回该临时目录。
+// useTempExeDir 把可执行文件"放"到临时目录里，返回该临时目录（已解析符号链接）。
+//
+// 这里必须创建一个**真实存在的文件**，而不是只把 executablePath 指向一个假路径：
+// Dir() 会对可执行文件调用 filepath.EvalSymlinks，只有路径真实存在时解析才会成功。
+// 用一个不存在的路径做桩，Dir() 会走"解析失败则退回原路径"的分支，于是返回未解析
+// 的目录，而用例却拿解析后的目录去比对——本机临时目录里没有符号链接时两者恰好相同，
+// 一到 CI 就暴露：macOS 的 /var 是指向 /private/var 的符号链接，Windows 的
+// 8.3 短名（RUNNER~1）也会被解析成真实用户名。
+//
+// 返回值同样取解析后的路径，这样所有调用方都能与 Dir()/Path() 的真实产物直接比较。
 func useTempExeDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	stubExecutable(t, filepath.Join(dir, "dns-opti.exe"), nil)
+	exe := filepath.Join(dir, "dns-opti.exe")
+	// 内容无关紧要：这里只需要它在文件系统上真实存在。
+	if err := os.WriteFile(exe, []byte("stub"), 0o644); err != nil {
+		t.Fatalf("创建占位可执行文件失败: %v", err)
+	}
+	stubExecutable(t, exe, nil)
+
+	// 与 Dir() 保持一致地解析符号链接，使比较基准就是生产代码会返回的目录。
+	if resolved, err := filepath.EvalSymlinks(dir); err == nil && resolved != "" {
+		return resolved
+	}
 	return dir
 }
 
@@ -116,7 +135,16 @@ func diffBools(field string, got, want *bool) string {
 // Settings 含有切片与指针字段，因此不能用 == 直接比较，只能逐字段判断。
 func isZeroSettings(s Settings) bool { return diffSettings(s, Settings{}) == "" }
 
-// onlyFiles 返回目录里的所有条目名，用来断言没有残留的临时文件。
+// stubExeName 是 useTempExeDir 放进临时目录的占位可执行文件名。
+//
+// 它必须是一个真实存在的文件（见 useTempExeDir 的说明），因此它也是这些目录里
+// 唯一一个"与设置无关、但理应存在"的条目。"没有残留文件"的断言要按名字精确地
+// 忽略它，而不是放宽成"只要没有 .tmp 就行"——后者会让真正的残留物漏过去。
+const stubExeName = "dns-opti.exe"
+
+// onlyFiles 返回目录里与设置相关的所有条目名，用来断言没有残留的临时文件。
+//
+// 占位可执行文件被排除在外：它是测试夹具的一部分，不是 Save 留下的东西。
 func onlyFiles(t *testing.T, dir string) []string {
 	t.Helper()
 	entries, err := os.ReadDir(dir)
@@ -125,12 +153,17 @@ func onlyFiles(t *testing.T, dir string) []string {
 	}
 	names := make([]string, 0, len(entries))
 	for _, e := range entries {
+		if e.Name() == stubExeName {
+			continue
+		}
 		names = append(names, e.Name())
 	}
 	return names
 }
 
 // assertCleanDir 断言目录里只剩期望的条目，没有残留的临时文件。
+//
+// 比较的是忽略占位可执行文件后的名单，因此 want 只需列出设置相关文件。
 func assertCleanDir(t *testing.T, dir string, want ...string) {
 	t.Helper()
 	got := onlyFiles(t, dir)
@@ -502,7 +535,8 @@ func TestSaveCreatesFileWithSettingsPerm(t *testing.T) {
 }
 
 func TestDirAndPath(t *testing.T) {
-	dir := useTempExeDir(t)
+	// useTempExeDir 返回的已经是解析符号链接后的目录，也就是 Dir() 应当给出的值。
+	real := useTempExeDir(t)
 
 	got := Dir()
 	if got == "" {
@@ -511,19 +545,17 @@ func TestDirAndPath(t *testing.T) {
 	if !filepath.IsAbs(got) {
 		t.Fatalf("Dir() = %q, 期望绝对路径", got)
 	}
-
-	// 解析符号链接之后得到的才是真实目录。
-	real, err := filepath.EvalSymlinks(dir)
-	if err != nil {
-		real = dir
-	}
 	if got != real {
 		t.Fatalf("Dir() = %q, 期望 %q", got, real)
 	}
 
+	// Path() 必须与 Dir() 自洽：不能自己再去解析一次而得到不同的目录。
 	path := Path()
-	if path != filepath.Join(dir, FileName) {
-		t.Fatalf("Path() = %q, 期望 %q", path, filepath.Join(dir, FileName))
+	if path != filepath.Join(got, FileName) {
+		t.Fatalf("Path() = %q, 期望 %q", path, filepath.Join(got, FileName))
+	}
+	if filepath.Dir(path) != got {
+		t.Fatalf("Path() 的目录 = %q, 与 Dir() = %q 不一致", filepath.Dir(path), got)
 	}
 	if filepath.Base(path) != FileName {
 		t.Fatalf("Path() = %q, 期望以 %q 结尾", path, FileName)
