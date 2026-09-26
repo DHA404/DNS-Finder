@@ -1,0 +1,55 @@
+# Normalise line endings so a Windows checkout and a Linux clone produce
+# byte-identical files. Without this, Git's core.autocrlf would rewrite every
+# text file on checkout, and the resulting noise buries real changes — the
+# repository is authored on Windows but built and tested on Linux in CI.
+#
+# Order matters: git applies the LAST matching rule for each attribute, so the
+# binary rules are kept at the bottom where nothing can override them. Getting
+# this wrong is subtle — a broad "*.js" rule placed after the chart library's
+# binary rule silently re-enables text conversion for it.
+* text=auto eol=lf
+
+# Go source, docs and config are all LF.
+*.go text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.txt text eol=lf
+
+# Keep shell scripts LF so they stay executable on Linux and macOS runners.
+*.sh text eol=lf
+
+# Windows scripts are happier with CRLF, and the diff noise of a lone *.ps1 is
+# not worth the risk of a script that will not run.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# --- binary rules last: nothing below overrides them -------------------------
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.gz binary
+*.exe binary
+
+# The embedded chart library is a build input, not editable source: its bytes
+# are exactly what upstream published, and they are embedded into the binary by
+# go:embed, so a line-ending rewrite would change the shipped asset.
+internal/web/static/echarts.min.js binary
+
+# --- diff and language statistics -------------------------------------------
+
+# go.sum is generated; keep it out of diffs and out of language statistics.
+go.sum -diff linguist-generated
+
+# The vendored chart library would otherwise dominate the repository's language
+# statistics as "JavaScript" and drown out the project's own app.js.
+internal/web/static/echarts.min.js -diff linguist-generated linguist-vendored

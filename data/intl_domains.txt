@@ -1,0 +1,98 @@
+# 国外域名列表（一行一条，# 开头为注释）
+#
+# 选取原则：以全球访问量大、且在中国大陆通常由国外权威 / CDN 解析的站点为主，
+# 覆盖搜索、社交、视频、开发、云服务、AI 等类别。用于测出国外 DNS 的真实
+# 解析性能，与国内域名列表严格分开统计（见 PLAN 第八节）。
+
+# 搜索 / 门户
+google.com
+bing.com
+yahoo.com
+duckduckgo.com
+yandex.com
+
+# 社交 / 内容
+facebook.com
+instagram.com
+x.com
+twitter.com
+reddit.com
+pinterest.com
+linkedin.com
+tumblr.com
+quora.com
+medium.com
+telegram.org
+whatsapp.com
+discord.com
+
+# 视频 / 音乐 / 游戏
+youtube.com
+netflix.com
+twitch.tv
+vimeo.com
+spotify.com
+soundcloud.com
+steampowered.com
+epicgames.com
+roblox.com
+nintendo.com
+playstation.com
+
+# 开发 / 云服务
+github.com
+gitlab.com
+bitbucket.org
+stackoverflow.com
+sourceforge.net
+docker.com
+python.org
+golang.org
+nodejs.org
+rust-lang.org
+kernel.org
+debian.org
+ubuntu.com
+archlinux.org
+mozilla.org
+huggingface.co
+npmjs.com
+pypi.org
+
+# 企业与 AI
+apple.com
+microsoft.com
+amazon.com
+adobe.com
+oracle.com
+ibm.com
+intel.com
+nvidia.com
+amd.com
+samsung.com
+sony.com
+openai.com
+chatgpt.com
+anthropic.com
+claude.ai
+cloudflare.com
+akamai.com
+
+# 新闻 / 其他
+wikipedia.org
+nytimes.com
+bbc.com
+cnn.com
+reuters.com
+bloomberg.com
+paypal.com
+ebay.com
+dropbox.com
+slack.com
+zoom.us
+notion.so
+figma.com
+airbnb.com
+booking.com
+uber.com
+imgur.com

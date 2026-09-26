@@ -1,0 +1,28 @@
+# 构建产物
+/dist/
+/dns-opti
+/dns-opti.exe
+/dns-opti_result_*.json
+*.test
+*.out
+
+# 交互界面自动生成的配置（写在程序目录下，见 README「配置自动保存」）
+/dns-opti.settings.json
+*.settings.json
+
+# Go 工具链
+/vendor/
+__debug_bin*
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 参考项目（仅本地用于对照，不参与构建与发布）
+/.example/
+
+# Windows 上被占用的二进制残留
+*.exe~
+*.bin~

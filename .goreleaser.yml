@@ -1,0 +1,125 @@
+# goreleaser 配置（PLAN 第十节）
+#
+# 优先目标平台为 windows/amd64；darwin 与 linux 一并构建，若某平台因
+# DoH3（quic-go，纯 Go，无 cgo）编译失败，可移除该平台或使用 nodoh3
+# 构建标签禁用 DoH3：
+#
+#   goreleaser build --id dns-opti-nodoh3
+#
+# 发布前先本地校验配置：
+#   goreleaser check
+#   goreleaser release --snapshot --clean
+version: 2
+
+project_name: dns-opti
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  # 默认构建：包含全部协议（UDP / DoT / DoH / DoH3）。
+  - id: dns-opti
+    main: ./cmd/dns-opti
+    binary: dns-opti
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X dns-opti/internal/cli.Version={{ .Version }}
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      # 优先保证 windows/amd64，其次 darwin/arm64、darwin/amd64、linux/amd64。
+      - goos: windows
+        goarch: arm64
+      - goos: linux
+        goarch: arm64
+
+  # 备用构建：使用 nodoh3 构建标签去掉 QUIC 依赖，供 DoH3 编译失败的平台使用。
+  - id: dns-opti-nodoh3
+    main: ./cmd/dns-opti
+    binary: dns-opti-nodoh3
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    tags:
+      - nodoh3
+    ldflags:
+      - -s -w
+      - -X dns-opti/internal/cli.Version={{ .Version }}
+    goos:
+      - windows
+    goarch:
+      - amd64
+
+archives:
+  - id: default
+    builds:
+      - dns-opti
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # The license and notice travel with every archive: the binary embeds
+    # Apache-2.0 ECharts, so a redistributed build has to carry the attribution
+    # that Apache-2.0 §4(d) requires.
+    files:
+      - README.md
+      - PLAN.md
+      - LICENSE
+      - NOTICE
+
+  - id: nodoh3
+    builds:
+      - dns-opti-nodoh3
+    name_template: >-
+      {{ .ProjectName }}-nodoh3_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - NOTICE
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  # A draft, not a published release: the maintainer reviews the generated
+  # notes and attaches the binaries deliberately, rather than publishing
+  # straight from a tag push.
+  draft: true
+  prerelease: auto
+  # Keep the upstream repositories credited in the release page itself, since
+  # the README's attribution is the only other place a downloader would see it.
+  footer: |
+    **完整变更**: https://github.com/DHA404/DNS-Finder/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    参考项目（代码完全重写，未复制其源码）：
+    [xxnuo/dns-benchmark](https://github.com/xxnuo/dns-benchmark) ·
+    [palemoky/dnspick](https://github.com/palemoky/dnspick)
+
+    许可证 Apache-2.0，详见随包附带的 LICENSE 与 NOTICE。
+

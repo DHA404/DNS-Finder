@@ -1,0 +1,85 @@
+dns-opti
+Copyright 2026 DHA404
+
+This product includes software developed at other projects, listed below.
+
+================================================================================
+Bundled third-party components
+================================================================================
+
+Apache ECharts (incubating)
+  Version:  5.6.0
+  License:  Apache License 2.0
+  Source:   https://echarts.apache.org/
+  Location: internal/web/static/echarts.min.js (embedded into the binary via
+            go:embed and served to the local viewer)
+
+  ECharts is distributed under the Apache License 2.0, the same license as this
+  project. Its license header is retained inside the minified file.
+
+================================================================================
+Go module dependencies
+================================================================================
+
+This project depends on the following Go modules. They are NOT vendored into
+this repository; they are fetched by the Go toolchain from their own
+repositories, and each remains under its own license.
+
+  github.com/charmbracelet/bubbletea     MIT
+  github.com/charmbracelet/lipgloss      MIT
+  github.com/miekg/dns                   BSD-3-Clause
+  github.com/quic-go/quic-go             MIT
+  github.com/spf13/cobra                 Apache-2.0
+  golang.org/x/term                      BSD-3-Clause
+
+The full dependency graph, including indirect dependencies, is recorded in
+go.mod and go.sum. Run `go mod download -json all` for the authoritative list
+of module versions and their license files.
+
+================================================================================
+Design references (no source code copied)
+================================================================================
+
+This project was written from scratch. Two open-source projects were studied for
+their design decisions, and no source file from either is included here. They
+are credited because the *approach* was informed by them:
+
+  xxnuo/dns-benchmark  (https://github.com/xxnuo/dns-benchmark)
+    - concurrency model: a global worker pool whose unit of work is one DNS
+      server
+    - the field layout of the exported result JSON
+    - the "batch visual analysis" interaction idea for the web viewer
+
+    NOTE ON LICENSING: this repository declares NO license (GitHub reports its
+    license field as null). No source code from it is included here, so nothing
+    is redistributed; the credit above is an acknowledgement of design
+    influence, not a license obligation. If you are the rights holder and would
+    like the attribution worded differently, please open an issue.
+
+  palemoky/dnspick  (https://github.com/palemoky/dnspick, MIT License)
+    - connection reuse and warm-up strategy (DoT long connections, DoH
+      keep-alive)
+    - the per-domain-category TUI progress panel
+    - system DNS detection and the "should I switch?" verdict idea
+
+    dnspick is MIT-licensed. No source code from it is included here either.
+
+The DNS server inventory and the domestic / international domain lists shipped
+in this repository were compiled independently for this project.
+
+================================================================================
+External test domains used by the resolver type detection
+================================================================================
+
+The optional "detect built-in DNS type" feature queries publicly documented
+category test domains in order to observe whether a resolver filters:
+
+  malware.testcategory.com        Cloudflare 1.1.1.1 for Families self-test
+  phishing.testcategory.com       same zone; NOT published by Cloudflare
+  advertising.filterdns.net       DNSFilter advertising-category self-test
+  googleads.g.doubleclick.net     generally-listed advertising domain
+  pagead2.googlesyndication.com   generally-listed advertising domain
+  ad.doubleclick.net              generally-listed advertising domain
+
+These names are queried at runtime only; no data from them is bundled, and the
+trademarks belong to their respective owners.

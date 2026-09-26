@@ -1,0 +1,86 @@
+# 国内域名列表（一行一条，# 开头为注释）
+#
+# 选取原则：以中国大陆用户访问量大、且主要由国内 DNS 权威解析的站点为主，
+# 覆盖搜索、电商、社交、视频、新闻、云服务、开发社区等类别，避免同一公司
+# 的多个域名重复占位。国内与国外域名严格分组，不混用（见 PLAN 第八节）。
+
+# 搜索 / 门户
+baidu.com
+so.com
+sogou.com
+hao123.com
+ifeng.com
+sina.com.cn
+sohu.com
+163.com
+126.com
+
+# 电商 / 生活
+taobao.com
+tmall.com
+jd.com
+pinduoduo.com
+suning.com
+vip.com
+dangdang.com
+alipay.com
+meituan.com
+dianping.com
+ele.me
+ctrip.com
+qunar.com
+58.com
+anjuke.com
+ke.com
+lianjia.com
+autohome.com.cn
+
+# 社交 / 内容
+qq.com
+weixin.qq.com
+weibo.com
+douyin.com
+kuaishou.com
+toutiao.com
+zhihu.com
+douban.com
+tieba.baidu.com
+hupu.com
+bilibili.com
+iqiyi.com
+youku.com
+mgtv.com
+xunlei.com
+
+# 云 / 企业 / 开发
+aliyun.com
+alibabacloud.com
+tencent.com
+qcloud.com
+huawei.com
+huaweicloud.com
+xiaomi.com
+mi.com
+360.cn
+kingsoft.com
+wps.cn
+jianguoyun.com
+gitee.com
+csdn.net
+cnblogs.com
+oschina.net
+51cto.com
+coding.net
+ucloud.cn
+qingcloud.com
+
+# 政务 / 公共
+12306.cn
+gov.cn
+people.com.cn
+xinhuanet.com
+cctv.com
+china.com.cn
+cnnic.cn
+chinaz.com
+miit.gov.cn

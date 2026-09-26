@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DNS 优选工具 · 数据可视化面板</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23006fee'/%3E%3Cpath d='M16 6c3 3 4.5 6.2 4.5 10S19 23 16 26c-3-3-4.5-6.2-4.5-10S13 9 16 6z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M6.5 16h19' stroke='white' stroke-width='2'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+  <noscript>
+    <p class="noscript">本页面的筛选、图表与公式切换需要启用 JavaScript。</p>
+  </noscript>
+
+  <header class="navbar">
+    <a class="brand" href="/">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path>
+        </svg>
+      </span>
+      <span class="brand-title">DNS 优选工具 · 数据可视化面板</span>
+    </a>
+
+    <div class="nav-actions">
+      <button class="btn btn-tonal" id="btn-import" type="button">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <path d="M12 16V4m0 0L8 8m4-4 4 4"></path>
+          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+        </svg>
+        读取分析
+      </button>
+      <button class="btn btn-tonal" id="btn-export" type="button">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <path d="M12 4v12m0 0 4-4m-4 4-4-4"></path>
+          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+        </svg>
+        导出 JSON
+      </button>
+      <button class="btn btn-icon" id="btn-theme" type="button" title="切换深浅色主题" aria-label="切换深浅色主题">
+        <svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4">
+          </path>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+        </svg>
+      </button>
+      <input id="file-input" type="file" accept="application/json,.json" hidden />
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <span class="sidebar-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          筛选
+        </span>
+        <button class="chevron" id="btn-collapse" type="button" title="折叠 / 展开筛选">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
+            <path d="m6 15 6-6 6 6"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="sidebar-body" id="sidebar-body">
+        <section class="facet">
+          <h3>服务器类型</h3>
+          <div class="pill-row" id="facet-proto"></div>
+        </section>
+
+        <section class="facet">
+          <h3>域名组</h3>
+          <p class="hint">国内与国外域名默认分组统计；选择「国内外混合」时会合并为一个分组。</p>
+          <div class="pill-row" id="facet-group"></div>
+        </section>
+
+        <section class="facet">
+          <h3>过滤策略</h3>
+          <p class="hint">解析器对域名的过滤行为，与地区无关：原生不过滤；安全会拦截恶意/钓鱼域名，通常也拦截广告与跟踪域名。</p>
+          <div class="pill-row" id="facet-policy"></div>
+          <p class="hint" id="policy-summary">—</p>
+        </section>
+
+        <section class="facet">
+          <h3>地区码</h3>
+          <p class="hint">按解析器所属国家/地区筛选（ISO 3166-1 国家码）。CDN 表示全球任播，无法归属单一国家。</p>
+          <div class="pill-row" id="facet-region-group"></div>
+          <div class="search search-sm">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <input id="region-search" type="search" placeholder="搜索地区码或名称" autocomplete="off" />
+          </div>
+          <div class="facet-actions">
+            <button class="btn btn-primary btn-sm" id="btn-region-all" type="button">全选</button>
+            <button class="btn btn-default btn-sm" id="btn-region-none" type="button">清除</button>
+            <button class="btn btn-default btn-sm" id="btn-region-invert" type="button">反选</button>
+          </div>
+          <div class="chip-cloud" id="facet-regions"></div>
+          <p class="hint" id="region-summary">—</p>
+        </section>
+
+        <section class="facet">
+          <h3>地址族</h3>
+          <p class="hint">仅测试指定地址族；主机名端点按解析结果判定。</p>
+          <div class="pill-row" id="facet-family"></div>
+        </section>
+
+        <section class="facet">
+          <h3>数据源</h3>
+          <p class="hint" id="facet-summary">—</p>
+          <div class="facet-actions">
+            <button class="btn btn-default btn-sm" id="btn-reload" type="button">重新载入</button>
+            <button class="btn btn-default btn-sm" id="btn-reset" type="button">重置筛选</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div class="formula-bar">
+        <span class="formula-label">评分公式</span>
+        <div class="formula-seg" id="formula-seg" role="tablist"></div>
+        <button class="btn btn-default btn-sm" id="btn-formula-info" type="button">公式说明</button>
+      </div>
+      <div class="formula-card hidden" id="formula-card"></div>
+
+      <div class="tabs" id="metric-tabs" role="tablist"></div>
+
+      <div id="panels"></div>
+
+      <div class="panel" id="combo-panel" hidden>
+        <div class="panel-head">
+          <h2>UDP 与 DoH 对比</h2>
+          <span class="muted small" id="combo-note">同一服务商的两种传输并排比较，不合并成一个分数</span>
+        </div>
+        <div class="table-wrap">
+          <table id="combo-table">
+            <thead>
+              <tr>
+                <th>服务商</th>
+                <th>地区</th>
+                <th class="num">UDP 成功率</th>
+                <th class="num">UDP 平均 (ms)</th>
+                <th class="num">DoH 成功率</th>
+                <th class="num">DoH 平均 (ms)</th>
+                <th class="num">DoH − UDP</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="overview" id="overview"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>延迟分布</h2>
+          <span class="muted small" id="hist-note">仅本次测试的结果可用（导入格式不含每次查询延迟）</span>
+        </div>
+        <div class="charts" id="charts"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>明细数据</h2>
+          <span class="muted small" id="table-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="detail-table">
+            <thead>
+              <tr>
+                <th>DNS 服务器 (IP)</th>
+                <th>协议</th>
+                <th>域名组</th>
+                <th>地区</th>
+                <th>过滤策略</th>
+                <th>地址族</th>
+                <th class="num">成功率</th>
+                <th class="num">成功/总数</th>
+                <th class="num">平均 (ms)</th>
+                <th class="num">P95 (ms)</th>
+                <th class="num">标准差 (ms)</th>
+                <th class="num">得分</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      本页面由 dns-opti 在 <code>127.0.0.1</code> 上临时启动，仅本机可访问，数据不出本机。
+      界面参考 <a href="https://bench.dash.2020818.xyz/" target="_blank" rel="noreferrer">bench.dash.2020818.xyz</a>；
+      参考项目 <a href="https://github.com/xxnuo/dns-benchmark" target="_blank" rel="noreferrer">xxnuo/dns-benchmark</a>、
+      <a href="https://github.com/palemoky/dnspick" target="_blank" rel="noreferrer">palemoky/dnspick</a>（代码完全重写）。
+    </p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/echarts.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+
+</html>
