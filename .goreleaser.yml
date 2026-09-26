@@ -63,7 +63,7 @@ builds:
 
 archives:
   - id: default
-    builds:
+    ids:
       - dns-opti
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
@@ -80,7 +80,7 @@ archives:
       - NOTICE
 
   - id: nodoh3
-    builds:
+    ids:
       - dns-opti-nodoh3
     name_template: >-
       {{ .ProjectName }}-nodoh3_{{ .Version }}_{{ .Os }}_{{ .Arch }}

@@ -159,6 +159,12 @@ func (o Options) Validate() error {
 	if len(o.Protocols) == 0 {
 		return fmt.Errorf("至少选择一种协议")
 	}
+	// A protocol that this build cannot speak is a configuration error, not a
+	// run that happens to fail: reporting it up front stops a nodoh3 binary
+	// from producing a table of 0% rows that looks like the servers' fault.
+	if reason := model.UnsupportedProtocols(o.Protocols); reason != "" {
+		return fmt.Errorf("%s", reason)
+	}
 	if o.IPVersion != "" && !o.IPVersion.IsLiteral() {
 		return fmt.Errorf("未知地址族 %q（可选: ipv4, ipv6, both）", o.IPVersion)
 	}

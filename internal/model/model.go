@@ -74,6 +74,33 @@ func ParseProtocol(s string) (Protocol, bool) {
 	return "", false
 }
 
+// UnsupportedProtocol reports why a protocol cannot be tested by this build, or
+// an empty string when it can.
+//
+// It exists because DoH3 can be compiled out (the "nodoh3" build tag drops the
+// QUIC dependency). Without this check such a build happily scheduled every
+// DoH3 server, failed each one at the transport layer, and printed a ranked
+// table of 0% rows — which reads as "these servers are broken" rather than
+// "this binary cannot speak this protocol". Calling it before a run starts is
+// what turns that silent failure into an actionable message.
+func UnsupportedProtocol(p Protocol) string {
+	if p == ProtocolDoH3 && doh3Disabled {
+		return "本次构建未启用 DoH3（构建标签 nodoh3），请改用 --protocols doh 或 udp"
+	}
+	return ""
+}
+
+// UnsupportedProtocols returns the first unsupported protocol's reason, or an
+// empty string when every protocol in the list is testable.
+func UnsupportedProtocols(protocols []Protocol) string {
+	for _, p := range protocols {
+		if reason := UnsupportedProtocol(p); reason != "" {
+			return reason
+		}
+	}
+	return ""
+}
+
 // Label returns the human-facing name of the protocol.
 func (p Protocol) Label() string {
 	switch p {

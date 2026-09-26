@@ -206,6 +206,12 @@ goreleaser release --clean                 # 需要已配置 GITHUB_TOKEN，产�
 go build -tags nodoh3 -o dns-opti ./cmd/dns-opti
 ```
 
+`nodoh3` 构建会**拒绝** `--protocols doh3` 并直接报错，而不是让每个 DoH3 服务器各失败一次：
+
+```
+错误: 本次构建未启用 DoH3（构建标签 nodoh3），请改用 --protocols doh 或 udp
+```
+
 构建产物命名、`ldflags` 版本注入与 `.goreleaser.yml` 保持一致（版本注入点为
 `dns-opti/internal/cli.Version`）。
 
@@ -660,7 +666,7 @@ dns-opti/
   或用协议筛选后分别查看。
 - **单次测量噪声。** 建议 `--attempts` 至少为 3；只测一次时，几毫秒的差异不具参考意义。
 - **DoH3 依赖网络放行 QUIC。** 若 UDP 443 被拦截，DoH3 会全部失败——这是网络环境的结果，不是工具的问题。
-  可用 `-tags nodoh3` 构建不含 DoH3 的版本。
+  可用 `-tags nodoh3` 构建不含 DoH3 的版本；该版本会直接拒绝 `--protocols doh3`，不会产生一片 0% 的假象。
 - **地区码是「服务商归属地」，不是「应答节点所在地」。** 任播服务（`CDN`）在世界各地由不同机房应答，
   无法归属单一国家，因此统一标为 `CDN`。这也是不使用 GeoIP 数据库的原因（见上文「地区码」）。
 - **地址族探测需要一次真实查询。** 启动时会向每个地址族尝试少量目标（每个地址族多个目标、并发进行，首个应答即取消其余），

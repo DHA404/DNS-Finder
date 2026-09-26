@@ -45,6 +45,51 @@ func TestParseProtocol(t *testing.T) {
 	}
 }
 
+// TestUnsupportedProtocolExplainsDoH3 checks the build-tag capability guard.
+//
+// The behaviour is inverted between the two builds, so the assertion is
+// deliberately written in terms of the same doh3Disabled constant the guard
+// uses: in a default build every protocol is testable, and in a nodoh3 build
+// DoH3 must be refused with an actionable message rather than silently failing
+// every server.
+func TestUnsupportedProtocolExplainsDoH3(t *testing.T) {
+	for _, p := range []Protocol{ProtocolUDP, ProtocolDoT, ProtocolDoH} {
+		if reason := UnsupportedProtocol(p); reason != "" {
+			t.Errorf("UnsupportedProtocol(%q) = %q, 期望空（该协议在任何构建下都可用）", p, reason)
+		}
+	}
+
+	reason := UnsupportedProtocol(ProtocolDoH3)
+	if doh3Disabled {
+		if reason == "" {
+			t.Fatal("nodoh3 构建下 DoH3 必须被报告为不可用，否则每个 DoH3 服务器都会静默失败")
+		}
+		// The message has to tell the user what to do instead.
+		for _, want := range []string{"nodoh3", "--protocols"} {
+			if !strings.Contains(reason, want) {
+				t.Errorf("提示信息缺少 %q: %q", want, reason)
+			}
+		}
+	} else if reason != "" {
+		t.Errorf("默认构建下 DoH3 应可用, 实际 %q", reason)
+	}
+}
+
+// TestUnsupportedProtocolsFindsAnyOffender covers the list form, which is what
+// the configuration validator calls.
+func TestUnsupportedProtocolsFindsAnyOffender(t *testing.T) {
+	if reason := UnsupportedProtocols([]Protocol{ProtocolUDP, ProtocolDoH}); reason != "" {
+		t.Errorf("全部可用时返回了 %q", reason)
+	}
+	list := []Protocol{ProtocolUDP, ProtocolDoH3, ProtocolDoH}
+	if reason := UnsupportedProtocols(list); doh3Disabled && reason == "" {
+		t.Error("列表中含不可用的 DoH3，却未报告")
+	}
+	if reason := UnsupportedProtocols(nil); reason != "" {
+		t.Errorf("空列表返回了 %q", reason)
+	}
+}
+
 func TestProtocolLabel(t *testing.T) {
 	tests := []struct {
 		name  string
